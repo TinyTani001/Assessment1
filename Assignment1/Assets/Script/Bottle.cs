@@ -9,6 +9,7 @@ public class Bottle : MonoBehaviour
     public float BottleShotForce = 12f, BottleDragMaxDistance, BottleDragMaxAngle, DirectionArrowOffset, BottleResetTime;
     public LayerMask MouseDetectionLayers;
     public GameObject DirectionArrowObject;
+    public GameDataSO GameData;
 
     private bool _canShootBottle, _isDragging, _resetTimerStarted;
     private Vector3 _startPosition, _dragStartPositon, _shootDirection, _offsetFromDragPosition, _bottlleDragLimit;
@@ -37,6 +38,7 @@ public class Bottle : MonoBehaviour
         {
             _resetTimerStarted = false;
             BottleRigidbody.transform.position = _startPosition;
+            GameData.DeductChance();
         }
     }
 
