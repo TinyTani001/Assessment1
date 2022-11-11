@@ -11,7 +11,7 @@ public class Bottle : MonoBehaviour
     public GameObject DirectionArrowObject;
     public GameDataSO GameData;
 
-    private bool _canShootBottle, _isDragging, _resetTimerStarted;
+    private bool _canShootBottle, _isDragging, _resetTimerStarted, _isBottleMoving;
     private Vector3 _startPosition, _dragStartPositon, _shootDirection, _offsetFromDragPosition, _bottlleDragLimit;
     private Plane _dragPlane;
     private float _forceModifier, _currentBottleResetTime;
@@ -37,6 +37,7 @@ public class Bottle : MonoBehaviour
         else if (Time.time > _currentBottleResetTime + BottleResetTime)
         {
             _resetTimerStarted = false;
+            _isBottleMoving = false;
             BottleRigidbody.transform.position = _startPosition;
             GameData.DeductChance();
         }
@@ -44,9 +45,25 @@ public class Bottle : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (_isBottleMoving)
+        {
+
+            // We are too slow that we can consider ourselves as stopped
+            if (BottleRigidbody.velocity.sqrMagnitude < 0.001f)
+            {
+                _isBottleMoving = false;
+                GameData.OnBottleStopped?.Invoke();
+            }
+        }
+
         if (_canShootBottle)
         {
             _canShootBottle = false;
+
+            // Setting this to true here so that it could be used  in next FixedUpdate call with velocity properly updated
+            _isBottleMoving = true;
+
+            GameData.OnBottleReleased?.Invoke();
             BottleRigidbody.AddForce(_shootDirection * Mathf.Lerp(0f, BottleShotForce, _forceModifier), ForceMode.Impulse);
         }
     }
@@ -92,14 +109,18 @@ public class Bottle : MonoBehaviour
                     }
 
                     _shootDirection = (_dragStartPositon - hitPoint).normalized;
-                    Vector3 arrowPos = BottleRigidbody.position + _shootDirection * DirectionArrowOffset;
-                    DirectionArrowObject.transform.position = arrowPos + Vector3.up * 0.01f;
-                    DirectionArrowObject.transform.rotation = Quaternion.LookRotation(_shootDirection);
+                    if (_shootDirection != Vector3.zero)
+                    {
+                        GameData.OnBottleDragged?.Invoke(_forceModifier);
+                        Vector3 arrowPos = BottleRigidbody.position + _shootDirection * DirectionArrowOffset;
+                        DirectionArrowObject.transform.position = arrowPos + Vector3.up * 0.01f;
+                        DirectionArrowObject.transform.rotation = Quaternion.LookRotation(_shootDirection);
 
-                    Vector3 bottlePos;
-                    bottlePos = hitPoint + _offsetFromDragPosition;
-                    bottlePos.y = _startPosition.y;
-                    BottleRigidbody.MovePosition(bottlePos);
+                        Vector3 bottlePos;
+                        bottlePos = hitPoint + _offsetFromDragPosition;
+                        bottlePos.y = _startPosition.y;
+                        BottleRigidbody.MovePosition(bottlePos);
+                    }
                 }
             }
         }
@@ -117,8 +138,8 @@ public class Bottle : MonoBehaviour
                 {
                     DirectionArrowObject.SetActive(false);
                     _canShootBottle = true;
-                    BottleRigidbody.velocity = Vector3.zero;
                     _resetTimerStarted = true;
+                    BottleRigidbody.velocity = Vector3.zero;
                     _currentBottleResetTime = Time.time;
                 }
             }

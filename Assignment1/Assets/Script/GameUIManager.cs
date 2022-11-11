@@ -1,6 +1,7 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.Accessibility;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// This class handles the in-game UI
@@ -9,11 +10,15 @@ public class GameUIManager : MonoBehaviour
 {
     public GameDataSO GameData;
     public GameObject[] ChanceCountImages;
-    public CanvasGroup ScoreUIGroup, ChanceUIGroup;
+    public CanvasGroup FinalScoreUIGroup, MainUIGroup;
+    public TMP_Text CurrentScoreText, FinalScoreText;
+    public Image MeterMaskImage;
 
     private void Start()
     {
         GameData.OnChancesUpdated += OnChancesUpdated;
+        GameData.OnScoreUpdated += OnScoreUpdate;
+        GameData.OnBottleDragged += OnBottleDragged;
     }
 
     private void OnDestroy()
@@ -31,9 +36,20 @@ public class GameUIManager : MonoBehaviour
         ChanceCountImages[currentChances].gameObject.SetActive(false);
         if (currentChances == 0)
         {
-            ScoreUIGroup.alpha = 1f;
-            ScoreUIGroup.blocksRaycasts = true;
-            ChanceUIGroup.alpha = 0f;
+            FinalScoreUIGroup.alpha = 1f;
+            FinalScoreUIGroup.blocksRaycasts = true;
+            MainUIGroup.alpha = 0f;
         }
+        MeterMaskImage.fillAmount = 0f;
+    }
+
+    private void OnScoreUpdate(int newValue)
+    {
+        CurrentScoreText.text = FinalScoreText.text = newValue.ToString();
+    }
+
+    private void OnBottleDragged(float percent)
+    {
+        MeterMaskImage.fillAmount = percent;
     }
 }
