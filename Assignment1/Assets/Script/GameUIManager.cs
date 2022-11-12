@@ -9,16 +9,24 @@ using UnityEngine.UI;
 public class GameUIManager : MonoBehaviour
 {
     public GameDataSO GameData;
+    public Canvas MainCanvas;
     public GameObject[] ChanceCountImages;
     public CanvasGroup FinalScoreUIGroup, MainUIGroup;
-    public TMP_Text CurrentScoreText, FinalScoreText;
+    public TMP_Text CurrentScoreText, FinalScoreText, ScoreMultiplierText;
+    public RectTransform ScoreMultiplierParentRect;
     public Image MeterMaskImage;
+
+    private RectTransform _scoreMultiplierRect;
 
     private void Start()
     {
+        _scoreMultiplierRect = ScoreMultiplierText.rectTransform;
+        ScoreMultiplierText.text = string.Empty;
+
         GameData.OnChancesUpdated += OnChancesUpdated;
         GameData.OnScoreUpdated += OnScoreUpdate;
         GameData.OnBottleDragged += OnBottleDragged;
+        GameData.OnNewScoreMultiplierPosition += OnNewScoreMultiplierPosition;
     }
 
     private void OnDestroy()
@@ -39,6 +47,7 @@ public class GameUIManager : MonoBehaviour
             FinalScoreUIGroup.alpha = 1f;
             FinalScoreUIGroup.blocksRaycasts = true;
             MainUIGroup.alpha = 0f;
+
         }
         MeterMaskImage.fillAmount = 0f;
     }
@@ -46,10 +55,18 @@ public class GameUIManager : MonoBehaviour
     private void OnScoreUpdate(int newValue)
     {
         CurrentScoreText.text = FinalScoreText.text = newValue.ToString();
+        ScoreMultiplierText.text = string.Empty;
     }
 
     private void OnBottleDragged(float percent)
     {
         MeterMaskImage.fillAmount = percent;
+    }
+
+    private void OnNewScoreMultiplierPosition(Vector3 position, int multiplierValue)
+    {
+        Vector3 screenPosition = Camera.main.WorldToScreenPoint(position) / MainCanvas.scaleFactor;
+        ScoreMultiplierParentRect.anchoredPosition = screenPosition;
+        ScoreMultiplierText.text = $"x{multiplierValue}";
     }
 }
